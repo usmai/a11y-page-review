@@ -94,6 +94,12 @@ PLAIN = {
         "A <ul> or <ol> contains something other than <li> elements.",
         "Keep only <li>, <script> or <template> directly inside lists.",
     ),
+    "landmark-one-main": (
+        "The page has no main landmark",
+        "There is no `<main>` element, so screen-reader users can\u2019t jump "
+        "straight to the content.",
+        "Wrap the post content in `<main>` (one per page).",
+    ),
     "frame-title": (
         "Frames have no title",
         "Embedded frames (often ads or videos) have no title, so screen "
@@ -208,9 +214,12 @@ def audit(url: str):
 
     for v in axe_results.get("violations", []):
         rid = v["id"]
+        if rid == "duplicate-id":  # covered by the duplicate-ID check below
+            continue
         impact = v.get("impact") or "minor"
         heading, what, fix = PLAIN.get(
-            rid, (v["help"], v["description"], f"See {v['helpUrl']}"))
+            rid, (v["help"], v["description"].rstrip(".") + ".",
+                  f"See {v['helpUrl']}"))
         where = _targets(v["nodes"])
         findings.append((IMPACT_ORDER.get(impact, 3),
                          f"{heading}. {what} Affected: {where}. {fix}"))
