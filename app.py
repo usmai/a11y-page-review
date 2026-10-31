@@ -81,7 +81,7 @@ PLAIN = {
     ),
     "region": (
         "Content sits outside landmarks",
-        "Some content isn’t inside a landmark such as <main> or <nav>.",
+        "Some content isn’t inside a landmark such as `<main>` or `<nav>`.",
         "Wrap page sections in the right landmark elements.",
     ),
     "aria-allowed-attr": (
