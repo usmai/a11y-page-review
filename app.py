@@ -17,6 +17,8 @@ import gradio as gr
 from axe_playwright_python.sync_playwright import Axe
 from playwright.sync_api import sync_playwright
 
+import vision
+
 # ---------------------------------------------------------------------------
 # Plain-language explanations for the axe rules seen most often.
 # ---------------------------------------------------------------------------
@@ -208,6 +210,10 @@ def audit(url: str):
         title = page.title()
         axe_results = Axe().run(page).response
         extra = page.evaluate(EXTRA_JS)
+        try:
+            vis_findings, vis_note = vision.check(page)
+        except Exception as e:  # never let the vision step break the report
+            vis_findings, vis_note = [], f"Vision check skipped ({e.__class__.__name__})."
         browser.close()
 
     findings = []  # (sort_key, text) - same plain style as the reference review
@@ -262,15 +268,23 @@ def audit(url: str):
                          "`word-break: break-word`, so narrow spaces split words "
                          "(\u201cAccessibilit / y\u201d). Remove it, or give the text more width."))
 
+    findings += vis_findings
     findings.sort(key=lambda f: f[0])
     lines = ["What to fix, in priority order", ""]
     if not findings:
         lines.append("No automated issues found. Still test with a keyboard and a screen reader.")
     for i, (_, text) in enumerate(findings, 1):
         lines.append(f"{i}. {text}")
-    lines += ["", "Check by hand too: text inside images (cut off at the edges, "
-              "or too small and light to read), how thumbnails look when cropped "
-              "square, and keyboard focus order. Automated tools can\u2019t see those."]
+    vision_ran = bool(vis_note) and vis_note.startswith("Vision check:")
+    if vision_ran:
+        lines += ["", "Check by hand too: keyboard focus order, and anything the "
+                  "AI image check may have missed. Automated tools can\u2019t judge everything."]
+    else:
+        lines += ["", "Check by hand too: text inside images (cut off at the edges, "
+                  "or too small and light to read), how thumbnails look when cropped "
+                  "square, and keyboard focus order. Automated tools can\u2019t see those."]
+    if vis_note:
+        lines += ["", f"_{vis_note}_"]
     return polish("\n".join(lines))
 
 
