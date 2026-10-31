@@ -1,0 +1,4 @@
+gradio==5.9.1
+playwright==1.49.1
+axe-playwright-python==0.1.4
+huggingface_hub>=0.26
